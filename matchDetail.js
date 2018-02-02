@@ -1,15 +1,9 @@
 'use strict';
-const axios = require('axios');
 const helpers = require('./helpers/general');
 const champion = require('./helpers/champion');
 
-const API_KEY = require('./helpers/const').API_KEY;
-
 function parseMatchDetailResponse(matchDetail, timeline, accountId) {
-  console.log('--- parseMatchDetailResponse');
   const { participantIdentities, participants } = matchDetail;
-  console.log(participantIdentities.map((ident) => ident.player.accountId));
-  console.log(accountId);
   const identity = participantIdentities
     .filter((ident) => ident.player.accountId.toString() === accountId)
     .map((ident) => ident.participantId);
@@ -84,14 +78,12 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
 
   return playerDetails;
 }
-const matchDetailUrl = (matchId) =>
-  `https://na1.api.riotgames.com/lol/match/v3/matches/${matchId}?api_key=${API_KEY}`;
 
-const matchTimelineUrl = (matchId) =>
-  `https://na1.api.riotgames.com/lol/match/v3/timelines/by-match/${matchId}?api_key=${API_KEY}`;
+const riotAxios = helpers.riotAxios;
 
-const getMatchDetails = (matchId) => axios.get(matchDetailUrl(matchId));
-const getMatchTimeline = (matchId) => axios.get(matchTimelineUrl(matchId));
+const getMatchDetails = (matchId) => riotAxios.get(`matches/${matchId}`);
+const getMatchTimeline = (matchId) =>
+  riotAxios.get(`timelines/by-match/${matchId}`);
 
 module.exports = (event, context, callback) => {
   if (event.body != null) {
@@ -129,7 +121,6 @@ module.exports = (event, context, callback) => {
           }
         })
         .catch((error) => {
-          console.log(error);
           callback(
             null,
             helpers.createResp(502, {
