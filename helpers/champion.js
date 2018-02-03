@@ -1,20 +1,20 @@
-const champList = require("./champList");
+import champList from './champList';
 
 const champMapByKey = {};
 const champMapByName = {};
 
-champList.forEach(champ => {
+champList.forEach((champ) => {
   champMapByKey[champ.key] = champ.name;
   champMapByName[champ.name] = champ;
 });
 
-module.exports.getChampByKey = (key) =>{
+export const getChampByKey = (key) => {
   return champMapByKey[key];
-}
+};
 
-module.exports.getChampByName = (champName) => {
+export const getChampByName = (champName) => {
   if (!champName || !(champName in champMapByName)) {
-    return champMapByName["Aatrox"];
+    return champMapByName['Aatrox'];
   }
   return champMapByName[champName];
-}
+};

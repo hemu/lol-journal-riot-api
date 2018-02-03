@@ -18,10 +18,12 @@ service: riot
 # frameworkVersion: "=X.X.X"
 plugins:
   - serverless-offline
+  - serverless-webpack
 
 custom:
   serverless-offline:
     port: 8000
+  webpackIncludeModules: true
 
 provider:
   name: aws

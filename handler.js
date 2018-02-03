@@ -1,4 +1,7 @@
 'use strict';
 
-module.exports.recentGames = require('./recentGames');
-module.exports.matchDetail = require('./matchDetail');
+import recentGames from './recentGamesHandler';
+import matchDetail from './matchDetailHandler';
+
+module.exports.recentGames = recentGames;
+module.exports.matchDetail = matchDetail;

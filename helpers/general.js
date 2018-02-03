@@ -1,26 +1,17 @@
-'use strict';
-const axios = require('axios');
-const API_KEY = require('./const').API_KEY;
-
-module.exports.riotAxios = axios.create({
-  baseURL: 'https://na1.api.riotgames.com/lol/match/v3/',
-  headers: { 'X-Riot-Token': API_KEY }
-});
-
-module.exports.createResp = (statusCode, params) => {
+export const createResp = (statusCode, params) => {
   return Object.assign(
     {
       statusCode,
       headers: {
         'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-        'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-      }
+        'Access-Control-Allow-Credentials': true, // Required for cookies, authorization headers with HTTPS
+      },
     },
-    params
+    params,
   );
 };
 
-module.exports.roleToLane = (role, lane) => {
+export const roleToLane = (role, lane) => {
   if (lane.indexOf('BOT') !== -1) {
     return role === 'DUO_SUPPORT' ? 'Support' : 'Bottom';
   }
@@ -31,7 +22,7 @@ module.exports.roleToLane = (role, lane) => {
   return lowerCasedLane[0].toUpperCase() + lowerCasedLane.slice(1);
 };
 
-module.exports.isPartnerRole = (targetRole, role, lane) => {
+export const isPartnerRole = (targetRole, role, lane) => {
   switch (targetRole) {
     case 'Top':
       return lane === 'JUNGLE';
@@ -48,7 +39,7 @@ module.exports.isPartnerRole = (targetRole, role, lane) => {
   }
 };
 
-module.exports.getQueue = (queueId) => {
+export const getQueue = (queueId) => {
   switch (queueId) {
     case 400:
       return 'Normal';
