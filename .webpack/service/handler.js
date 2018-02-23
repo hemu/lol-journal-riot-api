@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 4);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -79,35 +79,9 @@ module.exports = require("babel-runtime/core-js/json/stringify");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _axios = __webpack_require__(6);
-
-var _axios2 = _interopRequireDefault(_axios);
-
-var _const = __webpack_require__(7);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = _axios2.default.create({
-  baseURL: 'https://na1.api.riotgames.com/lol/match/v3/',
-  headers: {
-    'X-Riot-Token': _const.API_KEY
-  }
-});
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 exports.getQueue = exports.isPartnerRole = exports.roleToLane = exports.createResp = undefined;
 
-var _assign = __webpack_require__(8);
+var _assign = __webpack_require__(10);
 
 var _assign2 = _interopRequireDefault(_assign);
 
@@ -163,7 +137,51 @@ var getQueue = exports.getQueue = function getQueue(queueId) {
 };
 
 /***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _axios = __webpack_require__(8);
+
+var _axios2 = _interopRequireDefault(_axios);
+
+var _const = __webpack_require__(3);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = _axios2.default.create({
+  baseURL: 'https://na1.api.riotgames.com/lol/match/v3/',
+  headers: {
+    'X-Riot-Token': _const.API_KEY
+  }
+});
+
+/***/ }),
 /* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+if (!process.env.NODE_ENV || process.env.NODE_ENV == 'dev') {
+  __webpack_require__(9).config();
+}
+
+var API_KEY = exports.API_KEY = process.env.RIOT_API_KEY;
+var USER_POOL_ID = exports.USER_POOL_ID = process.env.USER_POOL_ID;
+var APP_CLIENT_ID = exports.APP_CLIENT_ID = process.env.APP_CLIENT_ID;
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -174,7 +192,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getChampByName = exports.getChampByKey = undefined;
 
-var _champList = __webpack_require__(9);
+var _champList = __webpack_require__(11);
 
 var _champList2 = _interopRequireDefault(_champList);
 
@@ -200,27 +218,38 @@ var getChampByName = exports.getChampByName = function getChampByName(champName)
 };
 
 /***/ }),
-/* 4 */
+/* 5 */
+/***/ (function(module, exports) {
+
+module.exports = require("babel-runtime/core-js/promise");
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _recentGamesHandler = __webpack_require__(5);
+var _recentGamesHandler = __webpack_require__(7);
 
 var _recentGamesHandler2 = _interopRequireDefault(_recentGamesHandler);
 
-var _matchDetailHandler = __webpack_require__(10);
+var _matchDetailHandler = __webpack_require__(12);
 
 var _matchDetailHandler2 = _interopRequireDefault(_matchDetailHandler);
+
+var _signUp = __webpack_require__(14);
+
+var _signUp2 = _interopRequireDefault(_signUp);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 module.exports.recentGames = _recentGamesHandler2.default;
 module.exports.matchDetail = _matchDetailHandler2.default;
+module.exports.signUp = _signUp2.default;
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -234,13 +263,13 @@ var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _api = __webpack_require__(1);
+var _api = __webpack_require__(2);
 
 var _api2 = _interopRequireDefault(_api);
 
-var _general = __webpack_require__(2);
+var _general = __webpack_require__(1);
 
-var _champion = __webpack_require__(3);
+var _champion = __webpack_require__(4);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -276,38 +305,33 @@ exports.default = function (event, context, callback) {
         }
       });
     }
+  } else {
+    callback(null, (0, _general.createResp)(400, {
+      error: 'No account id specified'
+    }));
   }
-  callback(null, (0, _general.createResp)(400, {
-    error: 'No account id specified'
-  }));
 };
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports) {
-
-module.exports = require("axios");
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var API_KEY = exports.API_KEY = 'RGAPI-4e72c5e6-1c7d-4b24-aa39-2b41800426e3';
 
 /***/ }),
 /* 8 */
 /***/ (function(module, exports) {
 
-module.exports = require("babel-runtime/core-js/object/assign");
+module.exports = require("axios");
 
 /***/ }),
 /* 9 */
+/***/ (function(module, exports) {
+
+module.exports = require("dotenv");
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports) {
+
+module.exports = require("babel-runtime/core-js/object/assign");
+
+/***/ }),
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -871,7 +895,7 @@ exports.default = [{
 }];
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -881,27 +905,28 @@ var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _promise = __webpack_require__(11);
+var _promise = __webpack_require__(5);
 
 var _promise2 = _interopRequireDefault(_promise);
 
-var _slicedToArray2 = __webpack_require__(12);
+var _slicedToArray2 = __webpack_require__(13);
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
-var _api = __webpack_require__(1);
+var _api = __webpack_require__(2);
 
 var _api2 = _interopRequireDefault(_api);
 
-var _general = __webpack_require__(2);
+var _general = __webpack_require__(1);
 
-var _champion = __webpack_require__(3);
+var _champion = __webpack_require__(4);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function parseMatchDetailResponse(matchDetail, timeline, accountId) {
   var participantIdentities = matchDetail.participantIdentities,
-      participants = matchDetail.participants;
+      participants = matchDetail.participants,
+      gameId = matchDetail.gameId;
 
   var identity = participantIdentities.filter(function (ident) {
     return ident.player.accountId.toString() === accountId;
@@ -914,22 +939,35 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
   }
   var targetParticipantId = identity[0];
 
+  /*
+  champion	""
+  gameId	""
+  rank	""
+  video	""
+  */
+
   var playerDetails = participants.filter(function (_ref) {
     var participantId = _ref.participantId;
     return participantId === targetParticipantId;
   }).map(function (_ref2) {
     var stats = _ref2.stats,
         timeline = _ref2.timeline,
-        teamId = _ref2.teamId;
+        teamId = _ref2.teamId,
+        championId = _ref2.championId;
     return {
       kills: stats.kills,
       assists: stats.assists,
       deaths: stats.deaths,
       outcome: stats.win ? 'W' : 'L',
+      champion: (0, _champion.getChampByKey)(championId),
       role: (0, _general.roleToLane)(timeline.role, timeline.lane),
+      // purposely set rank to a single space string
       teamId: teamId
     };
   }).shift();
+
+  playerDetails.gameId = gameId;
+  playerDetails.cs = [];
 
   var playerTeam = playerDetails.teamId;
 
@@ -978,8 +1016,15 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
     return frame.min > 4.5 && frame.min < 5.5 || frame.min > 9.5 && frame.min < 10.5 || frame.min > 14.5 && frame.min < 15.5 || frame.min > 19.5 && frame.min < 20.5;
   }).forEach(function (_ref6, i) {
     var minionsKilled = _ref6.minionsKilled;
-    return playerDetails['csAt' + (i + 1) * 5 + 'Min'] = minionsKilled;
+    return playerDetails.cs.push([(i + 1) * 5, minionsKilled]);
   });
+
+  //   cs: [
+  // [5, faker.random.number(20)],
+  // [10, faker.random.number({ min: 20, max: 70 })],
+  // [15, faker.random.number({ min: 70, max: 120 })],
+  // [20, faker.random.number({ min: 120, max: 160 })],
+  // ],
 
   return playerDetails;
 }
@@ -1016,23 +1061,109 @@ module.exports = function (event, context, callback) {
         }));
       });
     }
+  } else {
+    callback(null, (0, _general.createResp)(400, {
+      error: 'No match id specified'
+    }));
   }
-  callback(null, (0, _general.createResp)(400, {
-    error: 'No match id specified'
-  }));
 };
 
 /***/ }),
-/* 11 */
-/***/ (function(module, exports) {
-
-module.exports = require("babel-runtime/core-js/promise");
-
-/***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/helpers/slicedToArray");
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _stringify = __webpack_require__(0);
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
+var _promise = __webpack_require__(5);
+
+var _promise2 = _interopRequireDefault(_promise);
+
+var _general = __webpack_require__(1);
+
+var _const = __webpack_require__(3);
+
+var _amazonCognitoIdentityJs = __webpack_require__(15);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function signUp(email, password) {
+  var userPool = new _amazonCognitoIdentityJs.CognitoUserPool({
+    UserPoolId: _const.USER_POOL_ID,
+    ClientId: _const.APP_CLIENT_ID
+  });
+
+  var dataEmail = {
+    Name: 'email',
+    Value: email
+  };
+  var attributeEmail = new _amazonCognitoIdentityJs.CognitoUserAttribute(dataEmail);
+
+  return new _promise2.default(function (resolve, reject) {
+    return userPool.signUp(email, password, [attributeEmail], null, function (err, result) {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve(result.user);
+    });
+  });
+}
+
+exports.default = function (event, context, callback) {
+  // this is a dev environment, load environment variables manually
+  // from .env file (which is not managed by git)
+
+  if (event.body != null) {
+    var body = JSON.parse(event.body);
+    var email = body.email;
+    var password = body.password;
+    if (email != null && password != null) {
+      return signUp(email, password).then(function (user) {
+        callback(null, (0, _general.createResp)(200, {
+          body: (0, _stringify2.default)({
+            user: user
+          })
+        }));
+      }).catch(function (e) {
+        return callback(null, (0, _general.createResp)(500, {
+          body: (0, _stringify2.default)({
+            error: e.code
+          })
+        }));
+      });
+    } else {
+      callback(null, (0, _general.createResp)(400, {
+        error: 'No email or password specified'
+      }));
+    }
+  } else {
+    callback(null, (0, _general.createResp)(400, {
+      error: 'No email or password specified'
+    }));
+  }
+};
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports) {
+
+module.exports = require("amazon-cognito-identity-js");
 
 /***/ })
 /******/ ])));

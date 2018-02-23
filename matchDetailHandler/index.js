@@ -3,7 +3,7 @@ import { createResp, roleToLane, isPartnerRole } from '../helpers/general';
 import { getChampByKey } from '../helpers/champion';
 
 function parseMatchDetailResponse(matchDetail, timeline, accountId) {
-  const { participantIdentities, participants } = matchDetail;
+  const { participantIdentities, participants, gameId } = matchDetail;
   const identity = participantIdentities
     .filter((ident) => ident.player.accountId.toString() === accountId)
     .map((ident) => ident.participantId);
@@ -13,17 +13,29 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
   }
   const targetParticipantId = identity[0];
 
+  /*
+  champion	""
+  gameId	""
+  rank	""
+  video	""
+  */
+
   const playerDetails = participants
     .filter(({ participantId }) => participantId === targetParticipantId)
-    .map(({ stats, timeline, teamId }) => ({
+    .map(({ stats, timeline, teamId, championId }) => ({
       kills: stats.kills,
       assists: stats.assists,
       deaths: stats.deaths,
       outcome: stats.win ? 'W' : 'L',
+      champion: getChampByKey(championId),
       role: roleToLane(timeline.role, timeline.lane),
+      // purposely set rank to a single space string
       teamId,
     }))
     .shift();
+
+  playerDetails.gameId = gameId;
+  playerDetails.cs = [];
 
   const playerTeam = playerDetails.teamId;
 
@@ -71,10 +83,16 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
         (frame.min > 14.5 && frame.min < 15.5) ||
         (frame.min > 19.5 && frame.min < 20.5),
     )
-    .forEach(
-      ({ minionsKilled }, i) =>
-        (playerDetails[`csAt${(i + 1) * 5}Min`] = minionsKilled),
+    .forEach(({ minionsKilled }, i) =>
+      playerDetails.cs.push([(i + 1) * 5, minionsKilled]),
     );
+
+  //   cs: [
+  // [5, faker.random.number(20)],
+  // [10, faker.random.number({ min: 20, max: 70 })],
+  // [15, faker.random.number({ min: 70, max: 120 })],
+  // [20, faker.random.number({ min: 120, max: 160 })],
+  // ],
 
   return playerDetails;
 }
@@ -127,11 +145,12 @@ module.exports = (event, context, callback) => {
           );
         });
     }
+  } else {
+    callback(
+      null,
+      createResp(400, {
+        error: 'No match id specified',
+      }),
+    );
   }
-  callback(
-    null,
-    createResp(400, {
-      error: 'No match id specified',
-    }),
-  );
 };

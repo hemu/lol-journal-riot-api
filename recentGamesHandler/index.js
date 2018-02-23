@@ -43,11 +43,12 @@ export default (event, context, callback) => {
           }
         });
     }
+  } else {
+    callback(
+      null,
+      createResp(400, {
+        error: 'No account id specified',
+      }),
+    );
   }
-  callback(
-    null,
-    createResp(400, {
-      error: 'No account id specified',
-    }),
-  );
 };
