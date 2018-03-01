@@ -72,6 +72,8 @@ functions:
           method: post
           resp: json
           cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
   matchDetail:
     handler: handler.matchDetail
     events:
@@ -80,14 +82,16 @@ functions:
           method: post
           resp: json
           cors: true
-  signUp:
-    handler: handler.signUp
-    events:
-      - http:
-          path: signUp
-          method: post
-          resp: json
-          cors: true
+          authorizer:
+            arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
+  # signUp:
+  #   handler: handler.signUp
+  #   events:
+  #     - http:
+  #         path: signUp
+  #         method: post
+  #         resp: json
+  #         cors: true
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)
 #      - sns: greeter-topic
