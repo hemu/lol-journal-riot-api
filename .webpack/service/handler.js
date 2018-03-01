@@ -79,6 +79,7 @@ module.exports = require("babel-runtime/core-js/json/stringify");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.accountEndpoint = undefined;
 
 var _axios = __webpack_require__(8);
 
@@ -87,6 +88,15 @@ var _axios2 = _interopRequireDefault(_axios);
 var _const = __webpack_require__(9);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var accountEndpoint = exports.accountEndpoint = function accountEndpoint(name) {
+  return _axios2.default.create({
+    baseURL: 'https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/' + name,
+    headers: {
+      'X-Riot-Token': _const.API_KEY
+    }
+  });
+};
 
 exports.default = _axios2.default.create({
   baseURL: 'https://na1.api.riotgames.com/lol/match/v3/',
@@ -214,12 +224,17 @@ var _matchDetailHandler = __webpack_require__(13);
 
 var _matchDetailHandler2 = _interopRequireDefault(_matchDetailHandler);
 
+var _accountHandler = __webpack_require__(16);
+
+var _accountHandler2 = _interopRequireDefault(_accountHandler);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // import signUp from './signUp';
 
 module.exports.recentGames = _recentGamesHandler2.default;
 module.exports.matchDetail = _matchDetailHandler2.default;
+module.exports.account = _accountHandler2.default;
 // module.exports.signUp = signUp;
 
 /***/ }),
@@ -316,9 +331,9 @@ exports.default = function (event) {
   var userDetails = (0, _jwtDecode2.default)(authToken);
   console.log(userDetails);
   if (!userDetails) return null;
+
   var summoner = userDetails['custom:summoner-name'];
   var accountId = userDetails.accountId;
-  if (!summoner || !accountId) return null;
   return {
     summoner: summoner,
     accountId: accountId
@@ -1117,6 +1132,62 @@ module.exports = require("babel-runtime/core-js/promise");
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/helpers/slicedToArray");
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _stringify = __webpack_require__(0);
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
+var _api = __webpack_require__(1);
+
+var _general = __webpack_require__(2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (event, context, callback) {
+  var body = JSON.parse(event.body);
+  var summonerName = body.summonerName;
+  if (summonerName != null) {
+    return (0, _api.accountEndpoint)(summonerName).get().then(function (result) {
+      if (result.status === 200 && result.data && result.data.accountId) {
+        var response = (0, _general.createResp)(200, {
+          body: (0, _stringify2.default)({
+            accountId: result.data.accountId
+          })
+        });
+        callback(null, response);
+      } else {
+        callback(null, (0, _general.createResp)(502, {
+          error: 'Could not retrieve data from riot servers'
+        }));
+      }
+    }).catch(function (error) {
+      console.log(error.response.status);
+      console.log(error.response.status === 404);
+      if (error.response.status === 404) {
+        callback(null, (0, _general.createResp)(200, null));
+      } else {
+        callback(null, (0, _general.createResp)(502, {
+          error: 'Error retrieving summoner name from riot servers'
+        }));
+      }
+    });
+  } else {
+    callback(null, (0, _general.createResp)(400, {
+      error: 'No summoner name specified.'
+    }));
+  }
+};
 
 /***/ })
 /******/ ])));

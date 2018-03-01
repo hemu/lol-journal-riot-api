@@ -7,9 +7,9 @@ export default (event) => {
   const userDetails = jwtDecode(authToken);
   console.log(userDetails);
   if (!userDetails) return null;
+
   const summoner = userDetails['custom:summoner-name'];
   const accountId = userDetails.accountId;
-  if (!summoner || !accountId) return null;
   return {
     summoner,
     accountId,
