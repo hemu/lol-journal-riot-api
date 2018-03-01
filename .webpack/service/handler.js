@@ -80,11 +80,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _axios = __webpack_require__(6);
+var _axios = __webpack_require__(8);
 
 var _axios2 = _interopRequireDefault(_axios);
 
-var _const = __webpack_require__(7);
+var _const = __webpack_require__(9);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -107,7 +107,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getQueue = exports.isPartnerRole = exports.roleToLane = exports.createResp = undefined;
 
-var _assign = __webpack_require__(9);
+var _assign = __webpack_require__(11);
 
 var _assign2 = _interopRequireDefault(_assign);
 
@@ -174,7 +174,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getChampByName = exports.getChampByKey = undefined;
 
-var _champList = __webpack_require__(10);
+var _champList = __webpack_require__(12);
 
 var _champList2 = _interopRequireDefault(_champList);
 
@@ -210,7 +210,7 @@ var _recentGamesHandler = __webpack_require__(5);
 
 var _recentGamesHandler2 = _interopRequireDefault(_recentGamesHandler);
 
-var _matchDetailHandler = __webpack_require__(11);
+var _matchDetailHandler = __webpack_require__(13);
 
 var _matchDetailHandler2 = _interopRequireDefault(_matchDetailHandler);
 
@@ -237,6 +237,10 @@ var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
+var _auth = __webpack_require__(6);
+
+var _auth2 = _interopRequireDefault(_auth);
+
 var _api = __webpack_require__(1);
 
 var _api2 = _interopRequireDefault(_api);
@@ -262,38 +266,79 @@ function parseRecentGamesResponse(resp) {
 }
 
 exports.default = function (event, context, callback) {
-  if (event.body != null) {
-    var body = JSON.parse(event.body);
-    var accountId = body.accountId;
-    if (accountId != null) {
-      return _api2.default.get('matchlists/by-account/' + accountId + '/recent').then(function (result) {
-        if (result.status === 200 && result.data && result.data.matches) {
-          var response = (0, _general.createResp)(200, {
-            body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))
-          });
-          callback(null, response);
-        } else {
-          callback(null, (0, _general.createResp)(502, {
-            error: 'Could not retrieve data from riot servers'
-          }));
-        }
-      });
-    }
-  } else {
+  var authUser = (0, _auth2.default)(event);
+  if (!authUser) {
     callback(null, (0, _general.createResp)(400, {
-      error: 'No account id specified'
+      error: 'No valid authenticated user found'
     }));
+    return;
+  }
+
+  var body = JSON.parse(event.body);
+  var accountId = body.accountId;
+  if (accountId != null) {
+    return _api2.default.get('matchlists/by-account/' + accountId + '/recent').then(function (result) {
+      if (result.status === 200 && result.data && result.data.matches) {
+        var response = (0, _general.createResp)(200, {
+          body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))
+        });
+        callback(null, response);
+      } else {
+        callback(null, (0, _general.createResp)(502, {
+          error: 'Could not retrieve data from riot servers'
+        }));
+      }
+    });
   }
 };
 
 /***/ }),
 /* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _jwtDecode = __webpack_require__(7);
+
+var _jwtDecode2 = _interopRequireDefault(_jwtDecode);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (event) {
+  if (!event.headers || !event.headers.Authorization) return null;
+  var authToken = event.headers.Authorization;
+  console.log(authToken);
+  var userDetails = (0, _jwtDecode2.default)(authToken);
+  console.log(userDetails);
+  if (!userDetails) return null;
+  var summoner = userDetails['custom:summoner-name'];
+  var accountId = userDetails.accountId;
+  if (!summoner || !accountId) return null;
+  return {
+    summoner: summoner,
+    accountId: accountId
+  };
+};
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+module.exports = require("jwt-decode");
+
+/***/ }),
+/* 8 */
 /***/ (function(module, exports) {
 
 module.exports = require("axios");
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -303,27 +348,28 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 if (!process.env.NODE_ENV || process.env.NODE_ENV == 'dev') {
-  __webpack_require__(8).config();
+  __webpack_require__(10).config();
 }
 
 var API_KEY = exports.API_KEY = process.env.RIOT_API_KEY;
-// export const USER_POOL_ID = process.env.USER_POOL_ID;
-// export const APP_CLIENT_ID = process.env.APP_CLIENT_ID;
+var USER_POOL_ID = exports.USER_POOL_ID = process.env.USER_POOL_ID;
+var APP_CLIENT_ID = exports.APP_CLIENT_ID = process.env.APP_CLIENT_ID;
+var POOL_REGION = exports.POOL_REGION = process.env.POOL_REGION;
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("dotenv");
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/core-js/object/assign");
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -887,7 +933,7 @@ exports.default = [{
 }];
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -897,11 +943,11 @@ var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _promise = __webpack_require__(12);
+var _promise = __webpack_require__(14);
 
 var _promise2 = _interopRequireDefault(_promise);
 
-var _slicedToArray2 = __webpack_require__(13);
+var _slicedToArray2 = __webpack_require__(15);
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
@@ -1061,13 +1107,13 @@ module.exports = function (event, context, callback) {
 };
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/core-js/promise");
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/helpers/slicedToArray");
