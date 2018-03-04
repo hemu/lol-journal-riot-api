@@ -34,10 +34,10 @@ export default (event, context, callback) => {
   }
 
   const body = JSON.parse(event.body);
-  const accountId = body.accountId;
-  if (accountId != null) {
+  const summonerId = body.summonerId;
+  if (summonerId != null) {
     return riotAxios
-      .get(`matchlists/by-account/${accountId}/recent`)
+      .get(`matchlists/by-account/${summonerId}/recent`)
       .then((result) => {
         if (result.status === 200 && result.data && result.data.matches) {
           const response = createResp(200, {

@@ -182,7 +182,7 @@ var getQueue = exports.getQueue = function getQueue(queueId) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getChampByName = exports.getChampByKey = undefined;
+exports.UNKNOWN_CHAMPION = exports.getChampByName = exports.getChampByKey = undefined;
 
 var _champList = __webpack_require__(12);
 
@@ -208,6 +208,8 @@ var getChampByName = exports.getChampByName = function getChampByName(champName)
   }
   return champMapByName[champName];
 };
+
+var UNKNOWN_CHAMPION = exports.UNKNOWN_CHAMPION = 'Unknown';
 
 /***/ }),
 /* 4 */
@@ -290,9 +292,9 @@ exports.default = function (event, context, callback) {
   }
 
   var body = JSON.parse(event.body);
-  var accountId = body.accountId;
-  if (accountId != null) {
-    return _api2.default.get('matchlists/by-account/' + accountId + '/recent').then(function (result) {
+  var summonerId = body.summonerId;
+  if (summonerId != null) {
+    return _api2.default.get('matchlists/by-account/' + summonerId + '/recent').then(function (result) {
       if (result.status === 200 && result.data && result.data.matches) {
         var response = (0, _general.createResp)(200, {
           body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))
@@ -976,13 +978,13 @@ var _champion = __webpack_require__(3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function parseMatchDetailResponse(matchDetail, timeline, accountId) {
+function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   var participantIdentities = matchDetail.participantIdentities,
       participants = matchDetail.participants,
       gameId = matchDetail.gameId;
 
   var identity = participantIdentities.filter(function (ident) {
-    return ident.player.accountId.toString() === accountId;
+    return ident.player.accountId.toString() === summonerId;
   }).map(function (ident) {
     return ident.participantId;
   });
@@ -1046,6 +1048,9 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
     playerDetails.partner = partnerA.teamId === playerDetails.teamId ? partnerA.champion : partnerB.champion;
 
     playerDetails.opponentPartner = partnerA.teamId !== playerDetails.teamId ? partnerA.champion : partnerB.champion;
+  } else {
+    playerDetails.partner = _champion.UNKNOWN_CHAMPION;
+    playerDetails.opponentPartner = _champion.UNKNOWN_CHAMPION;
   }
 
   // find opponent champion by finding opponent with same role
@@ -1054,9 +1059,11 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
         _ref5$timeline = _ref5.timeline,
         role = _ref5$timeline.role,
         lane = _ref5$timeline.lane;
+
     return (0, _general.roleToLane)(role, lane) === playerDetails.role && participantId !== targetParticipantId;
   });
-  playerDetails.opponentChampion = (0, _champion.getChampByKey)(opponent.championId);
+
+  playerDetails.opponentChampion = opponent ? (0, _champion.getChampByKey)(opponent.championId) : _champion.UNKNOWN_CHAMPION;
 
   // get minion kills from detailed match history
   timeline.frames.map(function (frame) {
@@ -1093,14 +1100,14 @@ module.exports = function (event, context, callback) {
   if (event.body != null) {
     var body = JSON.parse(event.body);
     var matchId = body.matchId;
-    var accountId = body.accountId;
-    if (matchId != null && accountId != null) {
+    var summonerId = body.summonerId;
+    if (matchId != null && summonerId != null) {
       return _promise2.default.all([getMatchDetails(matchId), getMatchTimeline(matchId)]).then(function (fetchResponses) {
         var matchDetail = fetchResponses[0];
         var matchTimeline = fetchResponses[1];
         if (matchDetail.status === 200 && matchDetail.data && matchTimeline.status === 200 && matchTimeline.data) {
           var response = (0, _general.createResp)(200, {
-            body: (0, _stringify2.default)(parseMatchDetailResponse(matchDetail.data, matchTimeline.data, accountId))
+            body: (0, _stringify2.default)(parseMatchDetailResponse(matchDetail.data, matchTimeline.data, summonerId))
           });
           callback(null, response);
         } else {
@@ -1109,11 +1116,13 @@ module.exports = function (event, context, callback) {
           }));
         }
       }).catch(function (error) {
+        console.log(error);
         callback(null, (0, _general.createResp)(502, {
           error: 'Error retrieving data from riot servers'
         }));
       });
     }
+    callback(null, (0, _general.createResp)(400, { error: 'No match id or summonerId specified' }));
   } else {
     callback(null, (0, _general.createResp)(400, {
       error: 'No match id specified'
@@ -1162,7 +1171,7 @@ exports.default = function (event, context, callback) {
       if (result.status === 200 && result.data && result.data.accountId) {
         var response = (0, _general.createResp)(200, {
           body: (0, _stringify2.default)({
-            accountId: result.data.accountId
+            summonerId: result.data.accountId
           })
         });
         callback(null, response);

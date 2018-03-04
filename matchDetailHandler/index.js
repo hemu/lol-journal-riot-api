@@ -1,11 +1,11 @@
 import riotAxios from '../helpers/api';
 import { createResp, roleToLane, isPartnerRole } from '../helpers/general';
-import { getChampByKey } from '../helpers/champion';
+import { getChampByKey, UNKNOWN_CHAMPION } from '../helpers/champion';
 
-function parseMatchDetailResponse(matchDetail, timeline, accountId) {
+function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   const { participantIdentities, participants, gameId } = matchDetail;
   const identity = participantIdentities
-    .filter((ident) => ident.player.accountId.toString() === accountId)
+    .filter((ident) => ident.player.accountId.toString() === summonerId)
     .map((ident) => ident.participantId);
 
   if (identity.length < 1) {
@@ -59,15 +59,24 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
       partnerA.teamId !== playerDetails.teamId
         ? partnerA.champion
         : partnerB.champion;
+  } else {
+    playerDetails.partner = UNKNOWN_CHAMPION;
+    playerDetails.opponentPartner = UNKNOWN_CHAMPION;
   }
 
   // find opponent champion by finding opponent with same role
   const opponent = participants.find(
-    ({ participantId, timeline: { role, lane } }) =>
-      roleToLane(role, lane) === playerDetails.role &&
-      participantId !== targetParticipantId,
+    ({ participantId, timeline: { role, lane } }) => {
+      return (
+        roleToLane(role, lane) === playerDetails.role &&
+        participantId !== targetParticipantId
+      );
+    },
   );
-  playerDetails.opponentChampion = getChampByKey(opponent.championId);
+
+  playerDetails.opponentChampion = opponent
+    ? getChampByKey(opponent.championId)
+    : UNKNOWN_CHAMPION;
 
   // get minion kills from detailed match history
   timeline.frames
@@ -105,8 +114,8 @@ module.exports = (event, context, callback) => {
   if (event.body != null) {
     const body = JSON.parse(event.body);
     const matchId = body.matchId;
-    const accountId = body.accountId;
-    if (matchId != null && accountId != null) {
+    const summonerId = body.summonerId;
+    if (matchId != null && summonerId != null) {
       return Promise.all([getMatchDetails(matchId), getMatchTimeline(matchId)])
         .then((fetchResponses) => {
           const matchDetail = fetchResponses[0];
@@ -122,7 +131,7 @@ module.exports = (event, context, callback) => {
                 parseMatchDetailResponse(
                   matchDetail.data,
                   matchTimeline.data,
-                  accountId,
+                  summonerId,
                 ),
               ),
             });
@@ -137,6 +146,7 @@ module.exports = (event, context, callback) => {
           }
         })
         .catch((error) => {
+          console.log(error);
           callback(
             null,
             createResp(502, {
@@ -145,6 +155,10 @@ module.exports = (event, context, callback) => {
           );
         });
     }
+    callback(
+      null,
+      createResp(400, { error: 'No match id or summonerId specified' }),
+    );
   } else {
     callback(
       null,

@@ -13,7 +13,7 @@ export default (event, context, callback) => {
         if (result.status === 200 && result.data && result.data.accountId) {
           const response = createResp(200, {
             body: JSON.stringify({
-              accountId: result.data.accountId,
+              summonerId: result.data.accountId,
             }),
           });
           callback(null, response);

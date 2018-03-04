@@ -18,3 +18,5 @@ export const getChampByName = (champName) => {
   }
   return champMapByName[champName];
 };
+
+export const UNKNOWN_CHAMPION = 'Unknown';
