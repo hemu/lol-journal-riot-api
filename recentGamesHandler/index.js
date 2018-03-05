@@ -1,5 +1,6 @@
 'use strict';
 
+import auth from '../helpers/auth';
 import riotAxios from '../helpers/api';
 import {
   createResp,
@@ -21,34 +22,36 @@ function parseRecentGamesResponse(resp) {
 }
 
 export default (event, context, callback) => {
-  if (event.body != null) {
-    const body = JSON.parse(event.body);
-    const accountId = body.accountId;
-    if (accountId != null) {
-      return riotAxios
-        .get(`matchlists/by-account/${accountId}/recent`)
-        .then((result) => {
-          if (result.status === 200 && result.data && result.data.matches) {
-            const response = createResp(200, {
-              body: JSON.stringify(parseRecentGamesResponse(result.data)),
-            });
-            callback(null, response);
-          } else {
-            callback(
-              null,
-              createResp(502, {
-                error: 'Could not retrieve data from riot servers',
-              }),
-            );
-          }
-        });
-    }
-  } else {
+  const authUser = auth(event);
+  if (!authUser) {
     callback(
       null,
       createResp(400, {
-        error: 'No account id specified',
+        error: 'No valid authenticated user found',
       }),
     );
+    return;
+  }
+
+  const body = JSON.parse(event.body);
+  const summonerId = body.summonerId;
+  if (summonerId != null) {
+    return riotAxios
+      .get(`matchlists/by-account/${summonerId}/recent`)
+      .then((result) => {
+        if (result.status === 200 && result.data && result.data.matches) {
+          const response = createResp(200, {
+            body: JSON.stringify(parseRecentGamesResponse(result.data)),
+          });
+          callback(null, response);
+        } else {
+          callback(
+            null,
+            createResp(502, {
+              error: 'Could not retrieve data from riot servers',
+            }),
+          );
+        }
+      });
   }
 };

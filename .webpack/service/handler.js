@@ -79,14 +79,24 @@ module.exports = require("babel-runtime/core-js/json/stringify");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.accountEndpoint = undefined;
 
-var _axios = __webpack_require__(6);
+var _axios = __webpack_require__(8);
 
 var _axios2 = _interopRequireDefault(_axios);
 
-var _const = __webpack_require__(7);
+var _const = __webpack_require__(9);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var accountEndpoint = exports.accountEndpoint = function accountEndpoint(name) {
+  return _axios2.default.create({
+    baseURL: 'https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/' + name,
+    headers: {
+      'X-Riot-Token': _const.API_KEY
+    }
+  });
+};
 
 exports.default = _axios2.default.create({
   baseURL: 'https://na1.api.riotgames.com/lol/match/v3/',
@@ -107,7 +117,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getQueue = exports.isPartnerRole = exports.roleToLane = exports.createResp = undefined;
 
-var _assign = __webpack_require__(9);
+var _assign = __webpack_require__(11);
 
 var _assign2 = _interopRequireDefault(_assign);
 
@@ -172,9 +182,9 @@ var getQueue = exports.getQueue = function getQueue(queueId) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getChampByName = exports.getChampByKey = undefined;
+exports.UNKNOWN_CHAMPION = exports.getChampByName = exports.getChampByKey = undefined;
 
-var _champList = __webpack_require__(10);
+var _champList = __webpack_require__(12);
 
 var _champList2 = _interopRequireDefault(_champList);
 
@@ -199,6 +209,8 @@ var getChampByName = exports.getChampByName = function getChampByName(champName)
   return champMapByName[champName];
 };
 
+var UNKNOWN_CHAMPION = exports.UNKNOWN_CHAMPION = 'Unknown';
+
 /***/ }),
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -210,9 +222,13 @@ var _recentGamesHandler = __webpack_require__(5);
 
 var _recentGamesHandler2 = _interopRequireDefault(_recentGamesHandler);
 
-var _matchDetailHandler = __webpack_require__(11);
+var _matchDetailHandler = __webpack_require__(13);
 
 var _matchDetailHandler2 = _interopRequireDefault(_matchDetailHandler);
+
+var _accountHandler = __webpack_require__(16);
+
+var _accountHandler2 = _interopRequireDefault(_accountHandler);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -220,6 +236,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 module.exports.recentGames = _recentGamesHandler2.default;
 module.exports.matchDetail = _matchDetailHandler2.default;
+module.exports.account = _accountHandler2.default;
 // module.exports.signUp = signUp;
 
 /***/ }),
@@ -236,6 +253,10 @@ Object.defineProperty(exports, "__esModule", {
 var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
+
+var _auth = __webpack_require__(6);
+
+var _auth2 = _interopRequireDefault(_auth);
 
 var _api = __webpack_require__(1);
 
@@ -262,38 +283,79 @@ function parseRecentGamesResponse(resp) {
 }
 
 exports.default = function (event, context, callback) {
-  if (event.body != null) {
-    var body = JSON.parse(event.body);
-    var accountId = body.accountId;
-    if (accountId != null) {
-      return _api2.default.get('matchlists/by-account/' + accountId + '/recent').then(function (result) {
-        if (result.status === 200 && result.data && result.data.matches) {
-          var response = (0, _general.createResp)(200, {
-            body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))
-          });
-          callback(null, response);
-        } else {
-          callback(null, (0, _general.createResp)(502, {
-            error: 'Could not retrieve data from riot servers'
-          }));
-        }
-      });
-    }
-  } else {
+  var authUser = (0, _auth2.default)(event);
+  if (!authUser) {
     callback(null, (0, _general.createResp)(400, {
-      error: 'No account id specified'
+      error: 'No valid authenticated user found'
     }));
+    return;
+  }
+
+  var body = JSON.parse(event.body);
+  var summonerId = body.summonerId;
+  if (summonerId != null) {
+    return _api2.default.get('matchlists/by-account/' + summonerId + '/recent').then(function (result) {
+      if (result.status === 200 && result.data && result.data.matches) {
+        var response = (0, _general.createResp)(200, {
+          body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))
+        });
+        callback(null, response);
+      } else {
+        callback(null, (0, _general.createResp)(502, {
+          error: 'Could not retrieve data from riot servers'
+        }));
+      }
+    });
   }
 };
 
 /***/ }),
 /* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _jwtDecode = __webpack_require__(7);
+
+var _jwtDecode2 = _interopRequireDefault(_jwtDecode);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (event) {
+  if (!event.headers || !event.headers.Authorization) return null;
+  var authToken = event.headers.Authorization;
+  console.log(authToken);
+  var userDetails = (0, _jwtDecode2.default)(authToken);
+  console.log(userDetails);
+  if (!userDetails) return null;
+
+  var summoner = userDetails['custom:summoner-name'];
+  var accountId = userDetails.accountId;
+  return {
+    summoner: summoner,
+    accountId: accountId
+  };
+};
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+module.exports = require("jwt-decode");
+
+/***/ }),
+/* 8 */
 /***/ (function(module, exports) {
 
 module.exports = require("axios");
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -303,27 +365,28 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 if (!process.env.NODE_ENV || process.env.NODE_ENV == 'dev') {
-  __webpack_require__(8).config();
+  __webpack_require__(10).config();
 }
 
 var API_KEY = exports.API_KEY = process.env.RIOT_API_KEY;
-// export const USER_POOL_ID = process.env.USER_POOL_ID;
-// export const APP_CLIENT_ID = process.env.APP_CLIENT_ID;
+var USER_POOL_ID = exports.USER_POOL_ID = process.env.USER_POOL_ID;
+var APP_CLIENT_ID = exports.APP_CLIENT_ID = process.env.APP_CLIENT_ID;
+var POOL_REGION = exports.POOL_REGION = process.env.POOL_REGION;
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("dotenv");
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/core-js/object/assign");
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -887,7 +950,7 @@ exports.default = [{
 }];
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -897,11 +960,11 @@ var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _promise = __webpack_require__(12);
+var _promise = __webpack_require__(14);
 
 var _promise2 = _interopRequireDefault(_promise);
 
-var _slicedToArray2 = __webpack_require__(13);
+var _slicedToArray2 = __webpack_require__(15);
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
@@ -915,13 +978,21 @@ var _champion = __webpack_require__(3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function parseMatchDetailResponse(matchDetail, timeline, accountId) {
+function epochTimeToDateString(epochInMiliseconds) {
+  var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+  d.setUTCMilliseconds(epochInMiliseconds);
+  return d.toISOString();
+}
+
+function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   var participantIdentities = matchDetail.participantIdentities,
       participants = matchDetail.participants,
-      gameId = matchDetail.gameId;
+      gameId = matchDetail.gameId,
+      gameCreation = matchDetail.gameCreation;
+
 
   var identity = participantIdentities.filter(function (ident) {
-    return ident.player.accountId.toString() === accountId;
+    return ident.player.accountId.toString() === summonerId;
   }).map(function (ident) {
     return ident.participantId;
   });
@@ -938,7 +1009,7 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
   video	""
   */
 
-  var playerDetails = participants.filter(function (_ref) {
+  var gameDetails = participants.filter(function (_ref) {
     var participantId = _ref.participantId;
     return participantId === targetParticipantId;
   }).map(function (_ref2) {
@@ -958,16 +1029,17 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
     };
   }).shift();
 
-  playerDetails.gameId = gameId;
-  playerDetails.cs = [];
+  gameDetails.gameId = gameId;
+  gameDetails.gameDate = epochTimeToDateString(gameCreation);
+  gameDetails.cs = [];
 
-  var playerTeam = playerDetails.teamId;
+  var playerTeam = gameDetails.teamId;
 
   var partners = participants.filter(function (_ref3) {
     var _ref3$timeline = _ref3.timeline,
         role = _ref3$timeline.role,
         lane = _ref3$timeline.lane;
-    return (0, _general.isPartnerRole)(playerDetails.role, role, lane);
+    return (0, _general.isPartnerRole)(gameDetails.role, role, lane);
   }).map(function (_ref4) {
     var championId = _ref4.championId,
         teamId = _ref4.teamId;
@@ -982,9 +1054,12 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
         partnerA = _partners[0],
         partnerB = _partners[1];
 
-    playerDetails.partner = partnerA.teamId === playerDetails.teamId ? partnerA.champion : partnerB.champion;
+    gameDetails.partner = partnerA.teamId === gameDetails.teamId ? partnerA.champion : partnerB.champion;
 
-    playerDetails.opponentPartner = partnerA.teamId !== playerDetails.teamId ? partnerA.champion : partnerB.champion;
+    gameDetails.opponentPartner = partnerA.teamId !== gameDetails.teamId ? partnerA.champion : partnerB.champion;
+  } else {
+    gameDetails.partner = _champion.UNKNOWN_CHAMPION;
+    gameDetails.opponentPartner = _champion.UNKNOWN_CHAMPION;
   }
 
   // find opponent champion by finding opponent with same role
@@ -993,9 +1068,11 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
         _ref5$timeline = _ref5.timeline,
         role = _ref5$timeline.role,
         lane = _ref5$timeline.lane;
-    return (0, _general.roleToLane)(role, lane) === playerDetails.role && participantId !== targetParticipantId;
+
+    return (0, _general.roleToLane)(role, lane) === gameDetails.role && participantId !== targetParticipantId;
   });
-  playerDetails.opponentChampion = (0, _champion.getChampByKey)(opponent.championId);
+
+  gameDetails.opponentChampion = opponent ? (0, _champion.getChampByKey)(opponent.championId) : _champion.UNKNOWN_CHAMPION;
 
   // get minion kills from detailed match history
   timeline.frames.map(function (frame) {
@@ -1008,7 +1085,7 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
     return frame.min > 4.5 && frame.min < 5.5 || frame.min > 9.5 && frame.min < 10.5 || frame.min > 14.5 && frame.min < 15.5 || frame.min > 19.5 && frame.min < 20.5;
   }).forEach(function (_ref6, i) {
     var minionsKilled = _ref6.minionsKilled;
-    return playerDetails.cs.push([(i + 1) * 5, minionsKilled]);
+    return gameDetails.cs.push([(i + 1) * 5, minionsKilled]);
   });
 
   //   cs: [
@@ -1018,7 +1095,7 @@ function parseMatchDetailResponse(matchDetail, timeline, accountId) {
   // [20, faker.random.number({ min: 120, max: 160 })],
   // ],
 
-  return playerDetails;
+  return gameDetails;
 }
 
 var getMatchDetails = function getMatchDetails(matchId) {
@@ -1032,14 +1109,14 @@ module.exports = function (event, context, callback) {
   if (event.body != null) {
     var body = JSON.parse(event.body);
     var matchId = body.matchId;
-    var accountId = body.accountId;
-    if (matchId != null && accountId != null) {
+    var summonerId = body.summonerId;
+    if (matchId != null && summonerId != null) {
       return _promise2.default.all([getMatchDetails(matchId), getMatchTimeline(matchId)]).then(function (fetchResponses) {
         var matchDetail = fetchResponses[0];
         var matchTimeline = fetchResponses[1];
         if (matchDetail.status === 200 && matchDetail.data && matchTimeline.status === 200 && matchTimeline.data) {
           var response = (0, _general.createResp)(200, {
-            body: (0, _stringify2.default)(parseMatchDetailResponse(matchDetail.data, matchTimeline.data, accountId))
+            body: (0, _stringify2.default)(parseMatchDetailResponse(matchDetail.data, matchTimeline.data, summonerId))
           });
           callback(null, response);
         } else {
@@ -1048,11 +1125,13 @@ module.exports = function (event, context, callback) {
           }));
         }
       }).catch(function (error) {
+        console.log(error);
         callback(null, (0, _general.createResp)(502, {
           error: 'Error retrieving data from riot servers'
         }));
       });
     }
+    callback(null, (0, _general.createResp)(400, { error: 'No match id or summonerId specified' }));
   } else {
     callback(null, (0, _general.createResp)(400, {
       error: 'No match id specified'
@@ -1061,16 +1140,72 @@ module.exports = function (event, context, callback) {
 };
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/core-js/promise");
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/helpers/slicedToArray");
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _stringify = __webpack_require__(0);
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
+var _api = __webpack_require__(1);
+
+var _general = __webpack_require__(2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (event, context, callback) {
+  var body = JSON.parse(event.body);
+  var summonerName = body.summonerName;
+  if (summonerName != null) {
+    return (0, _api.accountEndpoint)(summonerName).get().then(function (result) {
+      if (result.status === 200 && result.data && result.data.accountId) {
+        var response = (0, _general.createResp)(200, {
+          body: (0, _stringify2.default)({
+            summonerId: result.data.accountId
+          })
+        });
+        callback(null, response);
+      } else {
+        callback(null, (0, _general.createResp)(502, {
+          error: 'Could not retrieve data from riot servers'
+        }));
+      }
+    }).catch(function (error) {
+      console.log(error.response.status);
+      console.log(error.response.status === 404);
+      if (error.response.status === 404) {
+        callback(null, (0, _general.createResp)(200, null));
+      } else {
+        callback(null, (0, _general.createResp)(502, {
+          error: 'Error retrieving summoner name from riot servers'
+        }));
+      }
+    });
+  } else {
+    callback(null, (0, _general.createResp)(400, {
+      error: 'No summoner name specified.'
+    }));
+  }
+};
 
 /***/ })
 /******/ ])));
