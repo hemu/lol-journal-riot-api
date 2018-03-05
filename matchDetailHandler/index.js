@@ -2,8 +2,20 @@ import riotAxios from '../helpers/api';
 import { createResp, roleToLane, isPartnerRole } from '../helpers/general';
 import { getChampByKey, UNKNOWN_CHAMPION } from '../helpers/champion';
 
+function epochTimeToDateString(epochInMiliseconds) {
+  const d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+  d.setUTCMilliseconds(epochInMiliseconds);
+  return d.toISOString();
+}
+
 function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
-  const { participantIdentities, participants, gameId } = matchDetail;
+  const {
+    participantIdentities,
+    participants,
+    gameId,
+    gameCreation,
+  } = matchDetail;
+
   const identity = participantIdentities
     .filter((ident) => ident.player.accountId.toString() === summonerId)
     .map((ident) => ident.participantId);
@@ -20,7 +32,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   video	""
   */
 
-  const playerDetails = participants
+  const gameDetails = participants
     .filter(({ participantId }) => participantId === targetParticipantId)
     .map(({ stats, timeline, teamId, championId }) => ({
       kills: stats.kills,
@@ -34,14 +46,15 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     }))
     .shift();
 
-  playerDetails.gameId = gameId;
-  playerDetails.cs = [];
+  gameDetails.gameId = gameId;
+  gameDetails.gameDate = epochTimeToDateString(gameCreation);
+  gameDetails.cs = [];
 
-  const playerTeam = playerDetails.teamId;
+  const playerTeam = gameDetails.teamId;
 
   const partners = participants
     .filter(({ timeline: { role, lane } }) =>
-      isPartnerRole(playerDetails.role, role, lane),
+      isPartnerRole(gameDetails.role, role, lane),
     )
     .map(({ championId, teamId }) => ({
       champion: getChampByKey(championId),
@@ -50,31 +63,31 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
 
   if (partners.length === 2) {
     const [partnerA, partnerB] = partners;
-    playerDetails.partner =
-      partnerA.teamId === playerDetails.teamId
+    gameDetails.partner =
+      partnerA.teamId === gameDetails.teamId
         ? partnerA.champion
         : partnerB.champion;
 
-    playerDetails.opponentPartner =
-      partnerA.teamId !== playerDetails.teamId
+    gameDetails.opponentPartner =
+      partnerA.teamId !== gameDetails.teamId
         ? partnerA.champion
         : partnerB.champion;
   } else {
-    playerDetails.partner = UNKNOWN_CHAMPION;
-    playerDetails.opponentPartner = UNKNOWN_CHAMPION;
+    gameDetails.partner = UNKNOWN_CHAMPION;
+    gameDetails.opponentPartner = UNKNOWN_CHAMPION;
   }
 
   // find opponent champion by finding opponent with same role
   const opponent = participants.find(
     ({ participantId, timeline: { role, lane } }) => {
       return (
-        roleToLane(role, lane) === playerDetails.role &&
+        roleToLane(role, lane) === gameDetails.role &&
         participantId !== targetParticipantId
       );
     },
   );
 
-  playerDetails.opponentChampion = opponent
+  gameDetails.opponentChampion = opponent
     ? getChampByKey(opponent.championId)
     : UNKNOWN_CHAMPION;
 
@@ -93,7 +106,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
         (frame.min > 19.5 && frame.min < 20.5),
     )
     .forEach(({ minionsKilled }, i) =>
-      playerDetails.cs.push([(i + 1) * 5, minionsKilled]),
+      gameDetails.cs.push([(i + 1) * 5, minionsKilled]),
     );
 
   //   cs: [
@@ -103,7 +116,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   // [20, faker.random.number({ min: 120, max: 160 })],
   // ],
 
-  return playerDetails;
+  return gameDetails;
 }
 
 const getMatchDetails = (matchId) => riotAxios.get(`matches/${matchId}`);

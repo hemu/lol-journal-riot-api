@@ -978,10 +978,18 @@ var _champion = __webpack_require__(3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function epochTimeToDateString(epochInMiliseconds) {
+  var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+  d.setUTCMilliseconds(epochInMiliseconds);
+  return d.toISOString();
+}
+
 function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   var participantIdentities = matchDetail.participantIdentities,
       participants = matchDetail.participants,
-      gameId = matchDetail.gameId;
+      gameId = matchDetail.gameId,
+      gameCreation = matchDetail.gameCreation;
+
 
   var identity = participantIdentities.filter(function (ident) {
     return ident.player.accountId.toString() === summonerId;
@@ -1001,7 +1009,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   video	""
   */
 
-  var playerDetails = participants.filter(function (_ref) {
+  var gameDetails = participants.filter(function (_ref) {
     var participantId = _ref.participantId;
     return participantId === targetParticipantId;
   }).map(function (_ref2) {
@@ -1021,16 +1029,17 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     };
   }).shift();
 
-  playerDetails.gameId = gameId;
-  playerDetails.cs = [];
+  gameDetails.gameId = gameId;
+  gameDetails.gameDate = epochTimeToDateString(gameCreation);
+  gameDetails.cs = [];
 
-  var playerTeam = playerDetails.teamId;
+  var playerTeam = gameDetails.teamId;
 
   var partners = participants.filter(function (_ref3) {
     var _ref3$timeline = _ref3.timeline,
         role = _ref3$timeline.role,
         lane = _ref3$timeline.lane;
-    return (0, _general.isPartnerRole)(playerDetails.role, role, lane);
+    return (0, _general.isPartnerRole)(gameDetails.role, role, lane);
   }).map(function (_ref4) {
     var championId = _ref4.championId,
         teamId = _ref4.teamId;
@@ -1045,12 +1054,12 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
         partnerA = _partners[0],
         partnerB = _partners[1];
 
-    playerDetails.partner = partnerA.teamId === playerDetails.teamId ? partnerA.champion : partnerB.champion;
+    gameDetails.partner = partnerA.teamId === gameDetails.teamId ? partnerA.champion : partnerB.champion;
 
-    playerDetails.opponentPartner = partnerA.teamId !== playerDetails.teamId ? partnerA.champion : partnerB.champion;
+    gameDetails.opponentPartner = partnerA.teamId !== gameDetails.teamId ? partnerA.champion : partnerB.champion;
   } else {
-    playerDetails.partner = _champion.UNKNOWN_CHAMPION;
-    playerDetails.opponentPartner = _champion.UNKNOWN_CHAMPION;
+    gameDetails.partner = _champion.UNKNOWN_CHAMPION;
+    gameDetails.opponentPartner = _champion.UNKNOWN_CHAMPION;
   }
 
   // find opponent champion by finding opponent with same role
@@ -1060,10 +1069,10 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
         role = _ref5$timeline.role,
         lane = _ref5$timeline.lane;
 
-    return (0, _general.roleToLane)(role, lane) === playerDetails.role && participantId !== targetParticipantId;
+    return (0, _general.roleToLane)(role, lane) === gameDetails.role && participantId !== targetParticipantId;
   });
 
-  playerDetails.opponentChampion = opponent ? (0, _champion.getChampByKey)(opponent.championId) : _champion.UNKNOWN_CHAMPION;
+  gameDetails.opponentChampion = opponent ? (0, _champion.getChampByKey)(opponent.championId) : _champion.UNKNOWN_CHAMPION;
 
   // get minion kills from detailed match history
   timeline.frames.map(function (frame) {
@@ -1076,7 +1085,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     return frame.min > 4.5 && frame.min < 5.5 || frame.min > 9.5 && frame.min < 10.5 || frame.min > 14.5 && frame.min < 15.5 || frame.min > 19.5 && frame.min < 20.5;
   }).forEach(function (_ref6, i) {
     var minionsKilled = _ref6.minionsKilled;
-    return playerDetails.cs.push([(i + 1) * 5, minionsKilled]);
+    return gameDetails.cs.push([(i + 1) * 5, minionsKilled]);
   });
 
   //   cs: [
@@ -1086,7 +1095,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   // [20, faker.random.number({ min: 120, max: 160 })],
   // ],
 
-  return playerDetails;
+  return gameDetails;
 }
 
 var getMatchDetails = function getMatchDetails(matchId) {
