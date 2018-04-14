@@ -283,16 +283,20 @@ function parseRecentGamesResponse(resp) {
 }
 
 exports.default = function (event, context, callback) {
-  var authUser = (0, _auth2.default)(event);
-  if (!authUser) {
-    callback(null, (0, _general.createResp)(400, {
-      error: 'No valid authenticated user found'
-    }));
-    return;
-  }
+  // const authUser = auth(event);
+  // if (!authUser) {
+  //   callback(
+  //     null,
+  //     createResp(400, {
+  //       error: 'No valid authenticated user found',
+  //     }),
+  //   );
+  //   return;
+  // }
 
   var body = JSON.parse(event.body);
   var summonerId = body.summonerId;
+
   if (summonerId != null) {
     return _api2.default.get('matchlists/by-account/' + summonerId + '/recent').then(function (result) {
       if (result.status === 200 && result.data && result.data.matches) {
@@ -305,8 +309,15 @@ exports.default = function (event, context, callback) {
           error: 'Could not retrieve data from riot servers'
         }));
       }
+    }).catch(function (error) {
+      callback(null, (0, _general.createResp)(502, {
+        error: 'Could not retrieve data from riot servers'
+      }));
     });
   }
+  callback(null, (0, _general.createResp)(400, {
+    error: 'No valid summonerId included in request.'
+  }));
 };
 
 /***/ }),
@@ -1174,9 +1185,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = function (event, context, callback) {
   var body = JSON.parse(event.body);
-  var summonerName = body.summonerName;
-  if (summonerName != null) {
-    return (0, _api.accountEndpoint)(summonerName).get().then(function (result) {
+  var summoner = body.summoner;
+  if (summoner !== null && summoner !== undefined) {
+    return (0, _api.accountEndpoint)(summoner).get().then(function (result) {
       if (result.status === 200 && result.data && result.data.accountId) {
         var response = (0, _general.createResp)(200, {
           body: (0, _stringify2.default)({

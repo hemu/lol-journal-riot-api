@@ -41,8 +41,8 @@ functions:
           method: post
           resp: json
           cors: true
-          authorizer:
-            arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
+          # authorizer:
+          #   arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
   matchDetail:
     handler: handler.matchDetail
     events:
@@ -51,8 +51,8 @@ functions:
           method: post
           resp: json
           cors: true
-          authorizer:
-            arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
+          # authorizer:
+          #   arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
   account:
     handler: handler.account
     events:
@@ -61,8 +61,8 @@ functions:
           method: post
           resp: json
           cors: true
-          authorizer:
-            arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
+          # authorizer:
+          #   arn: arn:aws:cognito-idp:us-east-1:996218044956:userpool/us-east-1_yiM257UGL
   # signUp:
   #   handler: handler.signUp
   #   events:
