@@ -5,9 +5,9 @@ import { createResp } from '../helpers/general';
 
 export default (event, context, callback) => {
   const body = JSON.parse(event.body);
-  const summonerName = body.summonerName;
-  if (summonerName != null) {
-    return accountEndpoint(summonerName)
+  const summoner = body.summoner;
+  if (summoner !== null && summoner !== undefined) {
+    return accountEndpoint(summoner)
       .get()
       .then((result) => {
         if (result.status === 200 && result.data && result.data.accountId) {
