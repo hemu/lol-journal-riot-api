@@ -89,21 +89,23 @@ var _const = __webpack_require__(9);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var accountEndpoint = exports.accountEndpoint = function accountEndpoint(name) {
+var accountEndpoint = exports.accountEndpoint = function accountEndpoint(name, regionId) {
   return _axios2.default.create({
-    baseURL: 'https://na1.api.riotgames.com/lol/summoner/v3/summoners/by-name/' + name,
+    baseURL: 'https://' + regionId + '.api.riotgames.com/lol/summoner/v3/summoners/by-name/' + name,
     headers: {
       'X-Riot-Token': _const.API_KEY
     }
   });
 };
 
-exports.default = _axios2.default.create({
-  baseURL: 'https://na1.api.riotgames.com/lol/match/v3/',
-  headers: {
-    'X-Riot-Token': _const.API_KEY
-  }
-});
+exports.default = function (regionId) {
+  return _axios2.default.create({
+    baseURL: 'https://' + regionId + '.api.riotgames.com/lol/match/v3/',
+    headers: {
+      'X-Riot-Token': _const.API_KEY
+    }
+  });
+};
 
 /***/ }),
 /* 2 */
@@ -232,12 +234,9 @@ var _accountHandler2 = _interopRequireDefault(_accountHandler);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// import signUp from './signUp';
-
 module.exports.recentGames = _recentGamesHandler2.default;
 module.exports.matchDetail = _matchDetailHandler2.default;
 module.exports.account = _accountHandler2.default;
-// module.exports.signUp = signUp;
 
 /***/ }),
 /* 5 */
@@ -277,7 +276,8 @@ function parseRecentGamesResponse(resp) {
       champion: (0, _champion.getChampByKey)(match.champion),
       queue: (0, _general.getQueue)(match.queue),
       timestamp: match.timestamp,
-      gameId: match.gameId
+      gameId: match.gameId,
+      gameRegionId: match.platformId
     };
   });
 }
@@ -296,9 +296,10 @@ exports.default = function (event, context, callback) {
 
   var body = JSON.parse(event.body);
   var summonerId = body.summonerId;
+  var regionId = body.regionId;
 
-  if (summonerId != null) {
-    return _api2.default.get('matchlists/by-account/' + summonerId + '/recent').then(function (result) {
+  if (summonerId != null && regionId != null) {
+    return (0, _api2.default)(regionId).get('matchlists/by-account/' + summonerId + '/recent').then(function (result) {
       if (result.status === 200 && result.data && result.data.matches) {
         var response = (0, _general.createResp)(200, {
           body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))
@@ -316,7 +317,7 @@ exports.default = function (event, context, callback) {
     });
   }
   callback(null, (0, _general.createResp)(400, {
-    error: 'No valid summonerId included in request.'
+    error: 'No valid summonerId or regionid included in request.'
   }));
 };
 
@@ -999,6 +1000,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   var participantIdentities = matchDetail.participantIdentities,
       participants = matchDetail.participants,
       gameId = matchDetail.gameId,
+      platformId = matchDetail.platformId,
       gameCreation = matchDetail.gameCreation;
 
 
@@ -1041,6 +1043,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   }).shift();
 
   gameDetails.gameId = gameId;
+  gameDetails.regionId = platformId;
   gameDetails.gameDate = epochTimeToDateString(gameCreation);
   gameDetails.cs = [];
 
@@ -1109,11 +1112,11 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   return gameDetails;
 }
 
-var getMatchDetails = function getMatchDetails(matchId) {
-  return _api2.default.get('matches/' + matchId);
+var getMatchDetails = function getMatchDetails(matchId, regionId) {
+  return (0, _api2.default)(regionId).get('matches/' + matchId);
 };
-var getMatchTimeline = function getMatchTimeline(matchId) {
-  return _api2.default.get('timelines/by-match/' + matchId);
+var getMatchTimeline = function getMatchTimeline(matchId, regionId) {
+  return (0, _api2.default)(regionId).get('timelines/by-match/' + matchId);
 };
 
 module.exports = function (event, context, callback) {
@@ -1121,8 +1124,9 @@ module.exports = function (event, context, callback) {
     var body = JSON.parse(event.body);
     var matchId = body.matchId;
     var summonerId = body.summonerId;
-    if (matchId != null && summonerId != null) {
-      return _promise2.default.all([getMatchDetails(matchId), getMatchTimeline(matchId)]).then(function (fetchResponses) {
+    var regionId = body.regionId;
+    if (matchId != null && summonerId != null && regionId != null) {
+      return _promise2.default.all([getMatchDetails(matchId, regionId), getMatchTimeline(matchId, regionId)]).then(function (fetchResponses) {
         var matchDetail = fetchResponses[0];
         var matchTimeline = fetchResponses[1];
         if (matchDetail.status === 200 && matchDetail.data && matchTimeline.status === 200 && matchTimeline.data) {
@@ -1142,10 +1146,10 @@ module.exports = function (event, context, callback) {
         }));
       });
     }
-    callback(null, (0, _general.createResp)(400, { error: 'No match id or summonerId specified' }));
+    callback(null, (0, _general.createResp)(400, { error: 'No matchId or summonerId or regionId specified' }));
   } else {
     callback(null, (0, _general.createResp)(400, {
-      error: 'No match id specified'
+      error: 'No matchId specified'
     }));
   }
 };
@@ -1186,8 +1190,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 exports.default = function (event, context, callback) {
   var body = JSON.parse(event.body);
   var summoner = body.summoner;
-  if (summoner !== null && summoner !== undefined) {
-    return (0, _api.accountEndpoint)(summoner).get().then(function (result) {
+  var regionId = body.regionId;
+  if (summoner !== null && summoner !== undefined && regionId !== null && regionId !== undefined) {
+    return (0, _api.accountEndpoint)(summoner, regionId).get().then(function (result) {
       if (result.status === 200 && result.data && result.data.accountId) {
         var response = (0, _general.createResp)(200, {
           body: (0, _stringify2.default)({
@@ -1196,6 +1201,7 @@ exports.default = function (event, context, callback) {
         });
         callback(null, response);
       } else {
+        console.log(result);
         callback(null, (0, _general.createResp)(502, {
           error: 'Could not retrieve data from riot servers'
         }));
@@ -1213,7 +1219,7 @@ exports.default = function (event, context, callback) {
     });
   } else {
     callback(null, (0, _general.createResp)(400, {
-      error: 'No summoner name specified.'
+      error: 'No summoner name or region specified.'
     }));
   }
 };

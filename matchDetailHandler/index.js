@@ -1,4 +1,4 @@
-import riotAxios from '../helpers/api';
+import riotEndpoint from '../helpers/api';
 import { createResp, roleToLane, isPartnerRole } from '../helpers/general';
 import { getChampByKey, UNKNOWN_CHAMPION } from '../helpers/champion';
 
@@ -13,6 +13,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     participantIdentities,
     participants,
     gameId,
+    platformId,
     gameCreation,
   } = matchDetail;
 
@@ -47,6 +48,7 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     .shift();
 
   gameDetails.gameId = gameId;
+  gameDetails.regionId = platformId;
   gameDetails.gameDate = epochTimeToDateString(gameCreation);
   gameDetails.cs = [];
 
@@ -119,17 +121,18 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
   return gameDetails;
 }
 
-const getMatchDetails = (matchId) => riotAxios.get(`matches/${matchId}`);
-const getMatchTimeline = (matchId) =>
-  riotAxios.get(`timelines/by-match/${matchId}`);
+const getMatchDetails = (matchId, regionId) => riotEndpoint(regionId).get(`matches/${matchId}`);
+const getMatchTimeline = (matchId, regionId) =>
+  riotEndpoint(regionId).get(`timelines/by-match/${matchId}`);
 
 module.exports = (event, context, callback) => {
   if (event.body != null) {
     const body = JSON.parse(event.body);
     const matchId = body.matchId;
     const summonerId = body.summonerId;
-    if (matchId != null && summonerId != null) {
-      return Promise.all([getMatchDetails(matchId), getMatchTimeline(matchId)])
+    const regionId = body.regionId;
+    if (matchId != null && summonerId != null && regionId != null) {
+      return Promise.all([getMatchDetails(matchId, regionId), getMatchTimeline(matchId, regionId)])
         .then((fetchResponses) => {
           const matchDetail = fetchResponses[0];
           const matchTimeline = fetchResponses[1];
@@ -170,13 +173,13 @@ module.exports = (event, context, callback) => {
     }
     callback(
       null,
-      createResp(400, { error: 'No match id or summonerId specified' }),
+      createResp(400, { error: 'No matchId or summonerId or regionId specified' }),
     );
   } else {
     callback(
       null,
       createResp(400, {
-        error: 'No match id specified',
+        error: 'No matchId specified',
       }),
     );
   }

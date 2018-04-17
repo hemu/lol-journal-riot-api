@@ -18,6 +18,7 @@ function parseRecentGamesResponse(resp) {
     queue: getQueue(match.queue),
     timestamp: match.timestamp,
     gameId: match.gameId,
+    gameRegionId: match.platformId,
   }));
 }
 
@@ -35,9 +36,10 @@ export default (event, context, callback) => {
 
   const body = JSON.parse(event.body);
   const summonerId = body.summonerId;
+  const regionId = body.regionId;
 
-  if (summonerId != null) {
-    return riotAxios
+  if (summonerId != null && regionId != null) {
+    return riotAxios(regionId)
       .get(`matchlists/by-account/${summonerId}/recent`)
       .then((result) => {
         if (result.status === 200 && result.data && result.data.matches) {
@@ -66,7 +68,7 @@ export default (event, context, callback) => {
   callback(
     null,
     createResp(400, {
-      error: 'No valid summonerId included in request.',
+      error: 'No valid summonerId or regionid included in request.',
     }),
   );
 };

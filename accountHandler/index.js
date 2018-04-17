@@ -6,8 +6,9 @@ import { createResp } from '../helpers/general';
 export default (event, context, callback) => {
   const body = JSON.parse(event.body);
   const summoner = body.summoner;
-  if (summoner !== null && summoner !== undefined) {
-    return accountEndpoint(summoner)
+  const regionId = body.regionId;
+  if (summoner !== null && summoner !== undefined && regionId !== null && regionId !== undefined) {
+    return accountEndpoint(summoner, regionId)
       .get()
       .then((result) => {
         if (result.status === 200 && result.data && result.data.accountId) {
@@ -18,6 +19,7 @@ export default (event, context, callback) => {
           });
           callback(null, response);
         } else {
+          console.log(result);
           callback(
             null,
             createResp(502, {
@@ -44,7 +46,7 @@ export default (event, context, callback) => {
     callback(
       null,
       createResp(400, {
-        error: 'No summoner name specified.',
+        error: 'No summoner name or region specified.',
       }),
     );
   }
