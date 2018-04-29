@@ -1046,14 +1046,27 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
 
   var playerTeam = gameDetails.teamId;
 
-  var partners = participants.filter(function (_ref3) {
-    var _ref3$timeline = _ref3.timeline,
-        role = _ref3$timeline.role,
-        lane = _ref3$timeline.lane;
-    return (0, _general.isPartnerRole)(gameDetails.role, role, lane);
+  // ----------------------------------- All opponent champions -----
+  var opponentChampions = participants.filter(function (_ref3) {
+    var teamId = _ref3.teamId;
+    return teamId !== gameDetails.teamId;
   }).map(function (_ref4) {
-    var championId = _ref4.championId,
-        teamId = _ref4.teamId;
+    var championId = _ref4.championId;
+    return (0, _champion.getChampByKey)(championId);
+  });
+
+  gameDetails.opponents = opponentChampions;
+
+  // ----------------------------------------------- Partners -------
+
+  var partners = participants.filter(function (_ref5) {
+    var _ref5$timeline = _ref5.timeline,
+        role = _ref5$timeline.role,
+        lane = _ref5$timeline.lane;
+    return (0, _general.isPartnerRole)(gameDetails.role, role, lane);
+  }).map(function (_ref6) {
+    var championId = _ref6.championId,
+        teamId = _ref6.teamId;
     return {
       champion: (0, _champion.getChampByKey)(championId),
       teamId: teamId
@@ -1073,12 +1086,14 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     gameDetails.opponentPartner = _champion.UNKNOWN_CHAMPION;
   }
 
+  // ----------------------------------------------- Opponent -------
+
   // find opponent champion by finding opponent with same role
-  var opponent = participants.find(function (_ref5) {
-    var participantId = _ref5.participantId,
-        _ref5$timeline = _ref5.timeline,
-        role = _ref5$timeline.role,
-        lane = _ref5$timeline.lane;
+  var opponent = participants.find(function (_ref7) {
+    var participantId = _ref7.participantId,
+        _ref7$timeline = _ref7.timeline,
+        role = _ref7$timeline.role,
+        lane = _ref7$timeline.lane;
 
     return (0, _general.roleToLane)(role, lane) === gameDetails.role && participantId !== targetParticipantId;
   });
@@ -1094,17 +1109,10 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     };
   }).filter(function (frame) {
     return frame.min > 4.5 && frame.min < 5.5 || frame.min > 9.5 && frame.min < 10.5 || frame.min > 14.5 && frame.min < 15.5 || frame.min > 19.5 && frame.min < 20.5;
-  }).forEach(function (_ref6, i) {
-    var minionsKilled = _ref6.minionsKilled;
+  }).forEach(function (_ref8, i) {
+    var minionsKilled = _ref8.minionsKilled;
     return gameDetails.cs.push([(i + 1) * 5, minionsKilled]);
   });
-
-  //   cs: [
-  // [5, faker.random.number(20)],
-  // [10, faker.random.number({ min: 20, max: 70 })],
-  // [15, faker.random.number({ min: 70, max: 120 })],
-  // [20, faker.random.number({ min: 120, max: 160 })],
-  // ],
 
   return gameDetails;
 }

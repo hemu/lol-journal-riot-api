@@ -54,6 +54,15 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
 
   const playerTeam = gameDetails.teamId;
 
+  // ----------------------------------- All opponent champions -----
+  const opponentChampions = participants
+    .filter(({teamId}) => teamId !== gameDetails.teamId)
+    .map(({championId}) => getChampByKey(championId))
+
+  gameDetails.opponents = opponentChampions;
+
+  // ----------------------------------------------- Partners -------
+
   const partners = participants
     .filter(({ timeline: { role, lane } }) =>
       isPartnerRole(gameDetails.role, role, lane),
@@ -78,6 +87,8 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     gameDetails.partner = UNKNOWN_CHAMPION;
     gameDetails.opponentPartner = UNKNOWN_CHAMPION;
   }
+
+  // ----------------------------------------------- Opponent -------
 
   // find opponent champion by finding opponent with same role
   const opponent = participants.find(
@@ -111,12 +122,6 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
       gameDetails.cs.push([(i + 1) * 5, minionsKilled]),
     );
 
-  //   cs: [
-  // [5, faker.random.number(20)],
-  // [10, faker.random.number({ min: 20, max: 70 })],
-  // [15, faker.random.number({ min: 70, max: 120 })],
-  // [20, faker.random.number({ min: 120, max: 160 })],
-  // ],
 
   return gameDetails;
 }
