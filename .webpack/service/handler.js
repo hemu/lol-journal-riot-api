@@ -81,11 +81,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.accountEndpoint = undefined;
 
-var _axios = __webpack_require__(8);
+var _axios = __webpack_require__(7);
 
 var _axios2 = _interopRequireDefault(_axios);
 
-var _const = __webpack_require__(9);
+var _const = __webpack_require__(8);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -119,9 +119,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getQueue = exports.isPartnerRole = exports.roleToLane = exports.createResp = undefined;
 
-var _assign = __webpack_require__(11);
+var _assign = __webpack_require__(10);
 
 var _assign2 = _interopRequireDefault(_assign);
+
+var _champion = __webpack_require__(3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -135,7 +137,10 @@ var createResp = exports.createResp = function createResp(statusCode, params) {
   }, params);
 };
 
-var roleToLane = exports.roleToLane = function roleToLane(role, lane) {
+var roleToLane = exports.roleToLane = function roleToLane(role, lane, champ) {
+  if (role === "DUO" && lane === "NONE") {
+    return (0, _champion.isBottomChampion)(champ) ? "Bottom" : "Support";
+  }
   if (lane.indexOf('BOT') !== -1) {
     return role === 'DUO_SUPPORT' ? 'Support' : 'Bottom';
   }
@@ -185,8 +190,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.UNKNOWN_CHAMPION = exports.getChampByName = exports.getChampByKey = undefined;
+exports.isBottomChampion = isBottomChampion;
 
-var _champList = __webpack_require__(12);
+var _champList = __webpack_require__(11);
 
 var _champList2 = _interopRequireDefault(_champList);
 
@@ -213,6 +219,12 @@ var getChampByName = exports.getChampByName = function getChampByName(champName)
 
 var UNKNOWN_CHAMPION = exports.UNKNOWN_CHAMPION = 'Unknown';
 
+var bottomChampions = ["Ashe", "Caitlyn", "Draven", "Ezreal", "Jhin", "Jinx", "Kalista", "Kog Maw", "Lucian", "Miss Fortune", "Sivir", "Tristana", "Twitch", "Urgot", "Varus", "Vayne", "Xayah", "Kai'Sa"];
+
+function isBottomChampion(champ) {
+  return bottomChampions.includes(champ);
+}
+
 /***/ }),
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -224,11 +236,11 @@ var _recentGamesHandler = __webpack_require__(5);
 
 var _recentGamesHandler2 = _interopRequireDefault(_recentGamesHandler);
 
-var _matchDetailHandler = __webpack_require__(13);
+var _matchDetailHandler = __webpack_require__(12);
 
 var _matchDetailHandler2 = _interopRequireDefault(_matchDetailHandler);
 
-var _accountHandler = __webpack_require__(16);
+var _accountHandler = __webpack_require__(15);
 
 var _accountHandler2 = _interopRequireDefault(_accountHandler);
 
@@ -326,48 +338,33 @@ exports.default = function (event, context, callback) {
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
+// import jwtDecode from 'jwt-decode';
 
+// export default (event) => {
+//   if (!event.headers || !event.headers.Authorization) return null;
+//   const authToken = event.headers.Authorization;
+//   console.log(authToken);
+//   const userDetails = jwtDecode(authToken);
+//   console.log(userDetails);
+//   if (!userDetails) return null;
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+//   const summoner = userDetails['custom:summoner-name'];
+//   const accountId = userDetails.accountId;
+//   return {
+//     summoner,
+//     accountId,
+//   };
+// };
 
-var _jwtDecode = __webpack_require__(7);
-
-var _jwtDecode2 = _interopRequireDefault(_jwtDecode);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = function (event) {
-  if (!event.headers || !event.headers.Authorization) return null;
-  var authToken = event.headers.Authorization;
-  console.log(authToken);
-  var userDetails = (0, _jwtDecode2.default)(authToken);
-  console.log(userDetails);
-  if (!userDetails) return null;
-
-  var summoner = userDetails['custom:summoner-name'];
-  var accountId = userDetails.accountId;
-  return {
-    summoner: summoner,
-    accountId: accountId
-  };
-};
 
 /***/ }),
 /* 7 */
 /***/ (function(module, exports) {
 
-module.exports = require("jwt-decode");
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports) {
-
 module.exports = require("axios");
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -377,7 +374,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 if (!process.env.NODE_ENV || process.env.NODE_ENV == 'dev') {
-  __webpack_require__(10).config();
+  __webpack_require__(9).config();
 }
 
 var API_KEY = exports.API_KEY = process.env.RIOT_API_KEY;
@@ -386,19 +383,19 @@ var APP_CLIENT_ID = exports.APP_CLIENT_ID = process.env.APP_CLIENT_ID;
 var POOL_REGION = exports.POOL_REGION = process.env.POOL_REGION;
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports) {
 
 module.exports = require("dotenv");
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/core-js/object/assign");
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -962,7 +959,7 @@ exports.default = [{
 }];
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -972,11 +969,11 @@ var _stringify = __webpack_require__(0);
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
-var _promise = __webpack_require__(14);
+var _promise = __webpack_require__(13);
 
 var _promise2 = _interopRequireDefault(_promise);
 
-var _slicedToArray2 = __webpack_require__(15);
+var _slicedToArray2 = __webpack_require__(14);
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
@@ -1155,19 +1152,19 @@ module.exports = function (event, context, callback) {
 };
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/core-js/promise");
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports) {
 
 module.exports = require("babel-runtime/helpers/slicedToArray");
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

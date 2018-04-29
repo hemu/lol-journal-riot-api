@@ -1,3 +1,5 @@
+import { isBottomChampion } from './champion';
+
 export const createResp = (statusCode, params) => {
   return Object.assign(
     {
@@ -11,7 +13,10 @@ export const createResp = (statusCode, params) => {
   );
 };
 
-export const roleToLane = (role, lane) => {
+export const roleToLane = (role, lane, champ) => {
+  if (role === "DUO" && lane === "NONE") {
+    return isBottomChampion(champ) ? "Bottom" : "Support";
+  }
   if (lane.indexOf('BOT') !== -1) {
     return role === 'DUO_SUPPORT' ? 'Support' : 'Bottom';
   }

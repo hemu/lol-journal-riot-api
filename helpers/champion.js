@@ -20,3 +20,28 @@ export const getChampByName = (champName) => {
 };
 
 export const UNKNOWN_CHAMPION = 'Unknown';
+
+const bottomChampions = [
+  "Ashe",
+  "Caitlyn",
+  "Draven",
+  "Ezreal",
+  "Jhin",
+  "Jinx",
+  "Kalista",
+  "Kog Maw",
+  "Lucian",
+  "Miss Fortune",
+  "Sivir",
+  "Tristana",
+  "Twitch",
+  "Urgot",
+  "Varus",
+  "Vayne",
+  "Xayah",
+  "Kai'Sa"
+]
+
+export function isBottomChampion(champ) {
+  return bottomChampions.includes(champ);
+}
