@@ -1114,6 +1114,33 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
     return gameDetails.cs.push([(i + 1) * 5, minionsKilled]);
   });
 
+  // ----------------------------------------------- Deaths ---------
+  function timeString(milliseconds) {
+    var fullSeconds = milliseconds / 1000;
+    var pad = function pad(num, size) {
+      return ('000' + num).slice(size * -1);
+    };
+    var time = parseFloat(fullSeconds).toFixed(3);
+    var hours = Math.floor(time / 60 / 60);
+    var minutes = Math.floor(time / 60) % 60;
+    var seconds = Math.floor(time - minutes * 60);
+    if (hours > 0) {
+      return pad(hours, 1) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2);
+    }
+    return pad(minutes, 2) + ':' + pad(seconds, 2);
+  }
+
+  var CHAMP_KILL_EVENT = 'CHAMPION_KILL';
+  var deathTimes = timeline.frames.reduce(function (acc, frame) {
+    return acc.concat(frame.events);
+  }, []).filter(function (event) {
+    return event.type === CHAMP_KILL_EVENT && event.victimId !== undefined && event.victimId === targetParticipantId;
+  }).map(function (event) {
+    return timeString(event.timestamp);
+  });
+
+  gameDetails.deathTimes = deathTimes;
+
   return gameDetails;
 }
 

@@ -2,6 +2,7 @@ import riotEndpoint from '../helpers/api';
 import { createResp, roleToLane, isPartnerRole } from '../helpers/general';
 import { getChampByKey, UNKNOWN_CHAMPION } from '../helpers/champion';
 
+
 function epochTimeToDateString(epochInMiliseconds) {
   const d = new Date(0); // The 0 there is the key, which sets the date to the epoch
   d.setUTCMilliseconds(epochInMiliseconds);
@@ -122,6 +123,27 @@ function parseMatchDetailResponse(matchDetail, timeline, summonerId) {
       gameDetails.cs.push([(i + 1) * 5, minionsKilled]),
     );
 
+  // ----------------------------------------------- Deaths ---------
+  function timeString(milliseconds) {
+    const fullSeconds = milliseconds / 1000;
+    const pad = function(num, size) { return ('000' + num).slice(size * -1); }
+    const time = parseFloat(fullSeconds).toFixed(3);
+    const hours = Math.floor(time / 60 / 60);
+    const minutes = Math.floor(time / 60) % 60;
+    const seconds = Math.floor(time - minutes * 60);
+    if(hours > 0) {
+      return pad(hours, 1) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2);
+    }
+    return pad(minutes, 2) + ':' + pad(seconds, 2);
+  }
+
+  const CHAMP_KILL_EVENT = 'CHAMPION_KILL'
+  const deathTimes = timeline.frames
+    .reduce((acc, frame) => acc.concat(frame.events), [])
+    .filter((event) => event.type === CHAMP_KILL_EVENT && event.victimId !== undefined && event.victimId === targetParticipantId)
+    .map((event) => timeString(event.timestamp))
+
+  gameDetails.deathTimes = deathTimes;
 
   return gameDetails;
 }
