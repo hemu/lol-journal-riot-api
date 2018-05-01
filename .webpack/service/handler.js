@@ -311,7 +311,7 @@ exports.default = function (event, context, callback) {
   var regionId = body.regionId;
 
   if (summonerId != null && regionId != null) {
-    return (0, _api2.default)(regionId).get('matchlists/by-account/' + summonerId + '/recent').then(function (result) {
+    return (0, _api2.default)(regionId).get('matchlists/by-account/' + summonerId + '?beginIndex=0&endIndex=19&queue=400&queue=420').then(function (result) {
       if (result.status === 200 && result.data && result.data.matches) {
         var response = (0, _general.createResp)(200, {
           body: (0, _stringify2.default)(parseRecentGamesResponse(result.data))

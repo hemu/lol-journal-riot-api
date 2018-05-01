@@ -40,7 +40,7 @@ export default (event, context, callback) => {
 
   if (summonerId != null && regionId != null) {
     return riotAxios(regionId)
-      .get(`matchlists/by-account/${summonerId}/recent`)
+      .get(`matchlists/by-account/${summonerId}?beginIndex=0&endIndex=19&queue=400&queue=420`)
       .then((result) => {
         if (result.status === 200 && result.data && result.data.matches) {
           const response = createResp(200, {
